@@ -1,3 +1,7 @@
+export type constructor<T> = {
+    new (...args: any[]): T;
+};
+
 export function createInstanceofPredicate<T>(
     name: string,
     clazz: new (...args: any[]) => T
