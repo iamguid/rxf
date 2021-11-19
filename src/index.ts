@@ -17,7 +17,7 @@ async function createTodos(count: number) {
     const view = createViewModelDeep(boxedTodo);
 
     autorun(() => {
-        console.log("isDeleted: ", (view.model as SoftDeletableBox<TodoModel>).isDeleted());
+        console.log("isDeleted: ", (view.model as SoftDeletableBox<TodoModel>).isDeleted);
     })
 
     view.caption = "Todo #1";
@@ -25,10 +25,8 @@ async function createTodos(count: number) {
 
     const result = await todoStore.createTodo(view);
 
-    console.log("Result: ", result.get().toObject())
-
-    result.delete();
-    result.undelete();
+    (view.model as any).delete();
+    (view.model as any).undelete();
 }
 
 createTodos(10);
