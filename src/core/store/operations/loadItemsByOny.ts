@@ -1,6 +1,5 @@
-import { IObservableValue } from "mobx";
 import { IModel } from "../../IModel";
-import { IDataStoreAccessor } from "../IDataStoreAccessor";
+import { BoxedModel, IDataStoreAccessor } from "../IDataStoreAccessor";
 import { FetchSingleRequest, loadItem } from "./loadItem";
 
 export async function loadItemsByOne<TModel extends IModel>(props: {
@@ -8,8 +7,8 @@ export async function loadItemsByOne<TModel extends IModel>(props: {
     invalidate: boolean
     accessor: IDataStoreAccessor<TModel>,
     fetcher: FetchSingleRequest<TModel>,
-}): Promise<IObservableValue<TModel>[]> {
-    const result: IObservableValue<TModel>[] = [];
+}): Promise<BoxedModel<TModel>[]> {
+    const result: BoxedModel<TModel>[] = [];
 
     for (const id of props.ids) {
         result.push(await loadItem({

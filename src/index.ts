@@ -1,4 +1,6 @@
-import { observable } from "mobx";
+import "reflect-metadata";
+import { autorun } from "mobx";
+import { SoftDeletableBox } from "./core/mobx/SoftDeletableBox";
 import { createViewModelDeep } from "./core/mobx/ViewModelDeep";
 import { TodoClient } from "./tests/TodoApp/TodoClient";
 import { TodoStore } from "./tests/TodoApp/TodoDataStore";
@@ -11,17 +13,22 @@ const todoStore = new TodoStore(todoService);
 
 async function createTodos(count: number) {
     const newTodo = new TodoModel();
-    const boxedTodo = observable.box(newTodo);
+    const boxedTodo = new SoftDeletableBox(newTodo);
     const view = createViewModelDeep(boxedTodo);
+
+    autorun(() => {
+        console.log("isDeleted: ", (view.model as SoftDeletableBox<TodoModel>).isDeleted());
+    })
 
     view.caption = "Todo #1";
     view.description = "First todo";
 
     const result = await todoStore.createTodo(view);
 
-    result.get();
+    console.log("Result: ", result.get().toObject())
 
-    console.log(result)
+    result.delete();
+    result.undelete();
 }
 
 createTodos(10);

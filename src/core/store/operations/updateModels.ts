@@ -1,12 +1,12 @@
-import { IObservableValue, observable } from "mobx";
+import { observable } from "mobx";
 import { IModel } from "../../IModel";
-import { IDataStoreAccessor } from "../IDataStoreAccessor";
+import { BoxedModel, IDataStoreAccessor } from "../IDataStoreAccessor";
 
 export const updateModels = <TModel extends IModel>(
     models: TModel[], 
     accessor: IDataStoreAccessor<TModel>
-): IObservableValue<TModel>[] => {
-    const result: IObservableValue<TModel>[] = [];
+): BoxedModel<TModel>[] => {
+    const result: BoxedModel<TModel>[] = [];
 
     for (const model of models) {
         const id = accessor.getId(model);
@@ -15,7 +15,7 @@ export const updateModels = <TModel extends IModel>(
         if (existing) {
             existing.set(model);
         } else {
-            accessor.set(id, observable.box(model));
+            accessor.set(id, model);
         }
 
         result.push(accessor.get(id)!);

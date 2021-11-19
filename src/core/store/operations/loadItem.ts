@@ -1,7 +1,7 @@
 import { observable } from "mobx";
 import { IObservableValue } from "mobx/dist/internal";
 import { IModel } from "../../IModel";
-import { IDataStoreAccessor } from "../IDataStoreAccessor";
+import { BoxedModel, IDataStoreAccessor } from "../IDataStoreAccessor";
 
 export type FetchSingleRequest<TModel extends IModel> = (id: string) => Promise<TModel>;
 
@@ -10,7 +10,7 @@ export async function loadItem<TModel extends IModel>(props: {
     invalidate: boolean
     accessor: IDataStoreAccessor<TModel>,
     fetcher: FetchSingleRequest<TModel>,
-}): Promise<IObservableValue<TModel>> {
+}): Promise<BoxedModel<TModel>> {
     const existing = props.accessor.get(props.id);
 
     if (props.invalidate) {
