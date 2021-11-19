@@ -1,5 +1,9 @@
+import defineSingletone from "../../core/di/defineSingletone";
 import { TodoModel } from "./TodoModel";
 
+export const TodoClientKey = Symbol("TodoClient");
+
+@defineSingletone(TodoClientKey)
 export class TodoClient {
     private todos: Map<string, TodoModel> = new Map();
     private lastId: number = 0;

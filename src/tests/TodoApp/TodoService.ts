@@ -1,15 +1,15 @@
 import defineService from "../../core/di/defineService";
-import { IModel } from "../../core/IModel";
+import inject from "../../core/di/inject";
 import { ISerializable } from "../../core/ISerializable";
 import { ViewModelDeep } from "../../core/mobx/ViewModelDeep";
-import { TodoClient } from "./TodoClient";
-import { ITodoModel, TodoModel } from "./TodoModel";
+import { TodoClient, TodoClientKey } from "./TodoClient";
+import { TodoModel } from "./TodoModel";
 
 export const TodoServiceKey = Symbol("TodoService");
 
 @defineService(TodoServiceKey)
 export class TodoService implements ISerializable {
-    constructor(private client: TodoClient) {}
+    constructor(@inject(TodoClientKey) private client: TodoClient) {}
 
     public fetchTodoById = async (id: string): Promise<TodoModel> => {
         return this.client.fetchTodoById(id);

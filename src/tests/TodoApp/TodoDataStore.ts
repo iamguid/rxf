@@ -1,11 +1,12 @@
 import defineDataStore from "../../core/di/defineDataStore";
-import { ViewModelDeep } from "../../core/mobx/ViewModelDeep";
+import { createViewModelDeep, ViewModelDeep } from "../../core/mobx/ViewModelDeep";
 import { IDataStoreAccessor } from "../../core/store/IDataStoreAccessor";
 import { loadItem, loadItemsByOne, loadBatch, loadPaginator, softDeleteItem as softDeleteItem, undeleteItem, hardDeleteItem, updateItem, createItem } from "../../core/store/operations";
-import { TodoModel } from "./TodoModel";
-import { TodoService } from "./TodoService";
+import { ITodoModel, TodoModel } from "./TodoModel";
+import { TodoService, TodoServiceKey } from "./TodoService";
 import { ISerializable } from "../../core/ISerializable";
 import { SoftDeletableModelBox } from "../../core/mobx/SoftDeletableModelBox";
+import inject from "../../core/di/inject";
 
 export const TodoStoreKey = Symbol("TodoStore");
 
@@ -16,7 +17,7 @@ export class TodoStore implements ISerializable {
     private service: TodoService;
     private accessor: IDataStoreAccessor<TodoModel>;
 
-    constructor(service: TodoService) {
+    constructor(@inject(TodoServiceKey) service: TodoService) {
         this.service = service;
 
         this.accessor = {
@@ -91,6 +92,21 @@ export class TodoStore implements ISerializable {
             accessor: this.accessor,
             updater: this.service.updateTodo
         }) as Promise<SoftDeletableModelBox<TodoModel>>
+    }
+
+    public buildNewTodo(base?: ITodoModel): ViewModelDeep<TodoModel> {
+        let newTodoModel: TodoModel;
+
+        if (base) {
+            newTodoModel = new TodoModel(base);
+        } else {
+            newTodoModel = new TodoModel();
+        }
+
+        const boxedNewTodo = this.creator(newTodoModel);
+        const viewNewTodo = createViewModelDeep(boxedNewTodo);
+
+        return viewNewTodo;
     }
 
     public toObject() {
