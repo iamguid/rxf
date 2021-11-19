@@ -13,16 +13,16 @@ export interface IViewModelDeepClass<TModel extends IModel> {
 
 export class ViewModelDeepClass<TModel extends IModel> implements IViewModelDeepClass<TModel> {
     public readonly model: BoxedModel<TModel>;
-    private copyObj: TModel;
+    private copyObj: IModel;
 
     constructor(model: BoxedModel<TModel>) {
         this.model = model;
         const copyObj = this.model.get().clone().toObject();
-        this.copyObj = makeAutoObservable(copyObj) as TModel;
+        this.copyObj = makeAutoObservable(copyObj) as IModel;
     }
 
     public reset = () => {
-        this.copyObj = this.model.get().clone() as TModel;
+        this.copyObj = this.model.get().clone() as IModel;
     };
 
     public get isDirty() {
