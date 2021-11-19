@@ -1,7 +1,8 @@
 import { observable, IObservableValue, computed, action } from "mobx";
+import { IModel } from "../IModel";
 import { createInstanceofPredicate } from "../utils";
 
-export interface ISoftDeletableBox<T> {
+export interface ISoftDeletableModelBox<T extends IModel> {
     get(): T;
     set(value: T): void;
     isDeleted: boolean;
@@ -9,7 +10,7 @@ export interface ISoftDeletableBox<T> {
     undelete(): void;
 }
 
-export class SoftDeletableBox<T> implements ISoftDeletableBox<T> {
+export class SoftDeletableModelBox<T extends IModel> implements ISoftDeletableModelBox<T> {
     private observableValue: IObservableValue<T>;
     private observableDeletedFlag: IObservableValue<boolean>;
 
@@ -44,4 +45,4 @@ export class SoftDeletableBox<T> implements ISoftDeletableBox<T> {
     }
 }
 
-export const isSoftDeletableBox = createInstanceofPredicate("SoftDeletableBox", SoftDeletableBox) as (x: any) => x is SoftDeletableBox<any>
+export const isSoftDeletableModelBox = createInstanceofPredicate("SoftDeletableModelBox", SoftDeletableModelBox) as (x: any) => x is SoftDeletableModelBox<any>

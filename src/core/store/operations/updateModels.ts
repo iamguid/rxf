@@ -15,7 +15,7 @@ export const updateModels = <TModel extends IModel>(
         if (existing) {
             existing.set(model);
         } else {
-            accessor.set(id, model);
+            accessor.set(id, accessor.create(model));
         }
 
         result.push(accessor.get(id)!);

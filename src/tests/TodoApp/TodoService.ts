@@ -1,9 +1,14 @@
 import defineService from "../../core/di/defineService";
+import { IModel } from "../../core/IModel";
+import { ISerializable } from "../../core/ISerializable";
+import { ViewModelDeep } from "../../core/mobx/ViewModelDeep";
 import { TodoClient } from "./TodoClient";
-import { TodoModel } from "./TodoModel";
+import { ITodoModel, TodoModel } from "./TodoModel";
 
-@defineService()
-export class TodoService {
+export const TodoServiceKey = Symbol("TodoService");
+
+@defineService(TodoServiceKey)
+export class TodoService implements ISerializable {
     constructor(private client: TodoClient) {}
 
     public fetchTodoById = async (id: string): Promise<TodoModel> => {
@@ -31,8 +36,8 @@ export class TodoService {
         }
     }
 
-    public addTodo = async (todo: TodoModel): Promise<TodoModel> => {
-        return this.client.addTodo(todo);
+    public addTodo = async (todo: ViewModelDeep<TodoModel>): Promise<TodoModel> => {
+        return this.client.addTodo(new TodoModel(todo));
     }
 
     public softDeleteTodo = async (id: string): Promise<TodoModel> => {
@@ -49,5 +54,9 @@ export class TodoService {
 
     public updateTodo = async (todo: TodoModel): Promise<TodoModel> => {
         return this.client.updateTodo(todo);
+    }
+
+    public toObject(): Object {
+        return {}
     }
 }

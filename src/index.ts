@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { autorun } from "mobx";
-import { SoftDeletableBox } from "./core/mobx/SoftDeletableBox";
+import { SoftDeletableModelBox } from "./core/mobx/SoftDeletableModelBox";
 import { createViewModelDeep } from "./core/mobx/ViewModelDeep";
 import { TodoClient } from "./tests/TodoApp/TodoClient";
 import { TodoStore } from "./tests/TodoApp/TodoDataStore";
@@ -13,20 +13,22 @@ const todoStore = new TodoStore(todoService);
 
 async function createTodos(count: number) {
     const newTodo = new TodoModel();
-    const boxedTodo = new SoftDeletableBox(newTodo);
-    const view = createViewModelDeep(boxedTodo);
+    const boxedNewTodo = new SoftDeletableModelBox(newTodo);
+    const viewNewTodo = createViewModelDeep(boxedNewTodo);
+
+    viewNewTodo.caption = "Todo #1";
+    viewNewTodo.description = "First todo";
+
+    const createTodoResult = await todoStore.createTodo(viewNewTodo);
+
+    console.log(createTodoResult === viewNewTodo.model)
 
     autorun(() => {
-        console.log("isDeleted: ", (view.model as SoftDeletableBox<TodoModel>).isDeleted);
+        console.log("isDeleted: ", (viewNewTodo.model as SoftDeletableModelBox<TodoModel>).isDeleted);
     })
 
-    view.caption = "Todo #1";
-    view.description = "First todo";
-
-    const result = await todoStore.createTodo(view);
-
-    (view.model as any).delete();
-    (view.model as any).undelete();
+    const deleteTodoResult = await todoStore.softDeleteTodo(createTodoResult.get().id!);
+    const undeleteTodoResult = await todoStore.undeleteTodo(createTodoResult.get().id!);
 }
 
 createTodos(10);

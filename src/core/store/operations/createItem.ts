@@ -11,8 +11,10 @@ export async function createItem<TModel extends IModel>(props: {
     accessor: IDataStoreAccessor<TModel>,
     creater: CreateSingleRequest<TModel>,
 }): Promise<BoxedModel<TModel>> {
+    const existing = props.view.model;
     const created = await props.creater(props.view);
     const createdId = props.accessor.getId(created);
-    props.accessor.set(createdId, created);
+    existing.set(created);
+    props.accessor.set(createdId, existing);
     return props.accessor.get(createdId)!;
 }

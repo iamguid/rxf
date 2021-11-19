@@ -50,7 +50,7 @@ export class TodoClient {
     public async addTodo(todo: TodoModel): Promise<TodoModel> {
         const id = (this.lastId++).toString();
         const newTodo: TodoModel = Object.assign({}, todo, { id })
-        this.todos.set(id, newTodo)
+        this.todos.set(id, new TodoModel(newTodo))
 
         return new Promise((resolve, reject) => {
             setTimeout(() => {

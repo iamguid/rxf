@@ -1,14 +1,15 @@
 import { action, computed, IObservableValue, observable } from "mobx";
+import { IModel } from "../IModel";
 import { createInstanceofPredicate } from "../utils";
 
-export interface IHardDeletableBox<T> {
+export interface IHardDeletableModelBox<T extends IModel> {
     get(): T;
     set(value: T): void;
     isDeleted: boolean;
     delete(): void;
 }
 
-export class HardDeletableBox<T> implements IHardDeletableBox<T> {
+export class HardDeletableModelBox<T extends IModel> implements IHardDeletableModelBox<T> {
     private observableValue: IObservableValue<T>;
     private observableDeletedFlag: IObservableValue<boolean>;
 
@@ -38,4 +39,4 @@ export class HardDeletableBox<T> implements IHardDeletableBox<T> {
     }
 }
 
-export const isHardDeletableBox = createInstanceofPredicate("HardDeletableBox", HardDeletableBox) as (x: any) => x is HardDeletableBox<any>
+export const isHardDeletableModelBox = createInstanceofPredicate("HardDeletableModelBox", HardDeletableModelBox) as (x: any) => x is HardDeletableModelBox<any>
