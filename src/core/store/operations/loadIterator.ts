@@ -5,7 +5,7 @@ import { updateModels } from "./updateModels";
 
 export type PaginatorIteratorFactory<TModel extends IModel> = (ids?: Set<string>) => AsyncIterableIterator<TModel[]>;
 
-export async function *loadPaginator<TModel extends IModel>(props: {
+export async function *loadIterator<TModel extends IModel>(props: {
     ids?: Set<string>,
     accessor: IDataStoreAccessor<TModel>,
     makeIterator: PaginatorIteratorFactory<TModel>

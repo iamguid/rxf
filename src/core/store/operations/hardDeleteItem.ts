@@ -15,7 +15,7 @@ export async function hardDeleteItem<TModel extends IModel>(props: {
 
     if (existing) {
         if (!isHardDeletableModelBox(existing)) {
-            throw new Error(`Existing model ${props.id} is not HardDeletableBox type`)
+            throw new Error(`Existing model ${props.id} is not HardDeletableModelBox type`)
         }
 
         existing.delete();

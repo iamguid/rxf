@@ -1,7 +1,7 @@
 import defineDataStore from "../../core/di/defineDataStore";
 import { createViewModelDeep, ViewModelDeep } from "../../core/mobx/ViewModelDeep";
 import { IDataStoreAccessor } from "../../core/store/IDataStoreAccessor";
-import { loadItem, loadItemsByOne, loadBatch, loadPaginator, softDeleteItem as softDeleteItem, undeleteItem, hardDeleteItem, updateItem, createItem } from "../../core/store/operations";
+import { loadItem, loadItemsByOne, loadBatch, loadIterator, softDeleteItem, undeleteItem, updateItem, createItem } from "../../core/store/operations";
 import { ITodoModel, TodoModel } from "./TodoModel";
 import { TodoService, TodoServiceKey } from "./TodoService";
 import { ISerializable } from "../../core/ISerializable";
@@ -54,8 +54,8 @@ export class TodoStore implements ISerializable {
         }) as Promise<SoftDeletableModelBox<TodoModel>[]>
     }
 
-    public async *makeTodosPaginator(ids?: Set<string>): AsyncIterableIterator<SoftDeletableModelBox<TodoModel>[]> {
-        return loadPaginator({
+    public async *getTodosIterator(ids?: Set<string>): AsyncIterableIterator<SoftDeletableModelBox<TodoModel>[]> {
+        return loadIterator({
             ids,
             accessor: this.accessor,
             makeIterator: this.service.fetchTodoPaginatableList

@@ -22,7 +22,7 @@ export async function softDeleteItem<TModel extends IModel>(props: {
     const result = props.accessor.get(props.id)!;
 
     if (!isSoftDeletableModelBox(result)) {
-        throw new Error(`Existing model ${props.id} is not SoftDeletableBox type`)
+        throw new Error(`Existing model ${props.id} is not SoftDeletableModelBox type`)
     }
 
     result.delete();
