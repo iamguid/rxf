@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import { injectable, container } from "tsyringe";
 import { ISerializable } from "../ISerializable";
 import { ObjectsRegistry } from "../ObjectsRegistry";

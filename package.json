@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@types/node": "16.11.7",
+    "@types/node": "^16.11.10",
     "mobx": "6.3.7",
     "reflect-metadata": "^0.1.13",
     "tsyringe": "^4.6.0",

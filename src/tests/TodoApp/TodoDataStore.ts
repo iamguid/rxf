@@ -1,131 +1,267 @@
+import { inject } from "tsyringe";
 import defineDataStore from "../../core/di/defineDataStore";
-import { createViewModelDeep, ViewModelDeep } from "../../core/mobx/ViewModelDeep";
-import { IDataStoreAccessor } from "../../core/store/IDataStoreAccessor";
-import { loadItem, loadItemsByOne, loadBatch, loadIterator, softDeleteItem, undeleteItem, updateItem, createItem } from "../../core/store/operations";
-import { ITodoModel, TodoModel } from "./TodoModel";
-import { TodoService, TodoServiceKey } from "./TodoService";
+import { IBaseEvent } from "../../core/IBaseEvent";
 import { ISerializable } from "../../core/ISerializable";
-import { SoftDeletableModelBox } from "../../core/mobx/SoftDeletableModelBox";
-import inject from "../../core/di/inject";
+import { IAsyncIteratorBox } from "../../core/mobx/AsyncIteratorBox";
+import { SoftDeletableModelBox, ISoftDeletableModelBox } from "../../core/mobx/SoftDeletableModelBox";
+import { ViewModelDeep } from "../../core/mobx/ViewModelDeep";
+import { singleQuery, collectionQuery, createItem, mutator, softDeleteItem, undeleteItem, updateItem } from "../../core/store";
+import { TodoClient, TodoClientKey } from "./TodoClient";
+import { TodoModel } from "./TodoModel";
+
+const TODO_CREATED_EVENT = Symbol('TODO_CREATED_EVENT');
+const TODO_SOFT_DELETED_EVENT = Symbol('TODO_SOFT_DELETED_EVENT');
+const TODO_SOFT_UNDELETED_EVENT = Symbol('TODO_SOFT_UNDELETED_EVENT');
+const TODO_UPDATED_EVENT = Symbol('TODO_UPDATED_EVENT');
+
+type TodoCreatedEvent = IBaseEvent<typeof TODO_CREATED_EVENT, { todo: TodoModel }>;
+type TodoUpdatedEvent = IBaseEvent<typeof TODO_UPDATED_EVENT, { todo: TodoModel }>;
+type TodoSoftDeletedEvent = IBaseEvent<typeof TODO_SOFT_DELETED_EVENT, { todoId: string }>;
+type TodoSoftUndeletedEvent = IBaseEvent<typeof TODO_SOFT_UNDELETED_EVENT, { todoId: string }>;
 
 export const TodoStoreKey = Symbol("TodoStore");
 
 @defineDataStore(TodoStoreKey)
-export class TodoStore implements ISerializable {
+export class TodoDataStore implements ISerializable {
+    private client: TodoClient;
     private data: Map<string, WeakRef<SoftDeletableModelBox<TodoModel>>> = new Map();
 
-    private service: TodoService;
-    private accessor: IDataStoreAccessor<TodoModel>;
-
-    constructor(@inject(TodoServiceKey) service: TodoService) {
-        this.service = service;
-
-        this.accessor = {
-            getId: this.idGetter,
-            get: this.getter,
-            set: this.setter,
-            create: this.creator
-        };
+    constructor(@inject(TodoClientKey) client: TodoClient) {
+        this.client = client;
     }
 
-    public loadTodo(id: string, invalidate: boolean) {
-        return loadItem({
-            id,
-            invalidate,
-            accessor: this.accessor,
-            fetcher: this.service.fetchTodoById
-        });
-    }
+    public async loadTodo(id: string): Promise<ISoftDeletableModelBox<TodoModel>> {
+        const self = this;
 
-    public loadTodosByOne(ids: Set<string>, invalidate: boolean): Promise<SoftDeletableModelBox<TodoModel>[]> {
-        return loadItemsByOne({
-            ids,
-            invalidate,
-            accessor: this.accessor,
-            fetcher: this.service.fetchTodoById
-        }) as Promise<SoftDeletableModelBox<TodoModel>[]>
-    }
-
-    public loadTodosBatch(ids: Set<string>): Promise<SoftDeletableModelBox<TodoModel>[]> {
-        return loadBatch({
-            ids, 
-            accessor: this.accessor,
-            fetcher: this.service.fetchTodosByIds
-        }) as Promise<SoftDeletableModelBox<TodoModel>[]>
-    }
-
-    public async *getTodosIterator(ids?: Set<string>): AsyncIterableIterator<SoftDeletableModelBox<TodoModel>[]> {
-        return loadIterator({
-            ids,
-            accessor: this.accessor,
-            makeIterator: this.service.fetchTodoPaginatableList
-        }) as AsyncIterableIterator<SoftDeletableModelBox<TodoModel>[]>
-    }
-
-    public async createTodo(view: ViewModelDeep<TodoModel>): Promise<SoftDeletableModelBox<TodoModel>> {
-        return createItem({
-            view,
-            accessor: this.accessor,
-            creater: this.service.addTodo
-        }) as Promise<SoftDeletableModelBox<TodoModel>>
-    }
-
-    public async softDeleteTodo(id: string): Promise<SoftDeletableModelBox<TodoModel>> {
-        return softDeleteItem({
-            id,
-            accessor: this.accessor,
-            remover: this.service.softDeleteTodo
-        }) as Promise<SoftDeletableModelBox<TodoModel>>
-    }
-
-    public async undeleteTodo(id: string): Promise<SoftDeletableModelBox<TodoModel>> {
-        return undeleteItem({
-            id,
-            accessor: this.accessor,
-            undeleter: this.service.undeleteTodo
-        }) as Promise<SoftDeletableModelBox<TodoModel>>
-    }
-
-    public async updateTodo(view: ViewModelDeep<TodoModel>): Promise<SoftDeletableModelBox<TodoModel>> {
-        return updateItem({
-            view,
-            accessor: this.accessor,
-            updater: this.service.updateTodo
-        }) as Promise<SoftDeletableModelBox<TodoModel>>
-    }
-
-    public buildNewTodo(base?: ITodoModel): ViewModelDeep<TodoModel> {
-        let newTodoModel: TodoModel;
-
-        if (base) {
-            newTodoModel = new TodoModel(base);
-        } else {
-            newTodoModel = new TodoModel();
+        async function query() {
+            return await self.client.fetchTodoById(id);
         }
 
-        const boxedNewTodo = this.creator(newTodoModel);
-        const viewNewTodo = createViewModelDeep(boxedNewTodo);
+        return await singleQuery({
+            query,
+            id,
+            data: this.data,
+            dataCtor: (model) => new SoftDeletableModelBox(new TodoModel(model)),
+        })
+    }
 
-        return viewNewTodo;
+    public loadTodosByOne(ids: Set<string>): IAsyncIteratorBox<ISoftDeletableModelBox<TodoModel>> {
+        const self = this;
+
+        async function *query() {
+            for (let id of ids) {
+                yield await self.client.fetchTodoById(id);
+            }
+        }
+
+        return collectionQuery({
+            storeKey: TodoStoreKey,
+            query,
+            ids,
+            events: [],
+            data: this.data,
+            dataCtor: (model) => new SoftDeletableModelBox(new TodoModel(model)),
+            modelIdGetter: (model) => model.id!
+        })
+    }
+
+    public loadTodosBatch(ids: Set<string>): IAsyncIteratorBox<ISoftDeletableModelBox<TodoModel>> {
+        const self = this;
+
+        async function *query() {
+            const result = await self.client.fetchTodosByIds(ids);
+
+            for (const item of result) {
+                yield item;
+            }
+        }
+
+        return collectionQuery({
+            storeKey: TodoStoreKey,
+            ids: new Set(),
+            query,
+            events: [],
+            data: this.data,
+            dataCtor: (model) => new SoftDeletableModelBox(new TodoModel(model)),
+            modelIdGetter: (model) => model.id!
+        })
+    }
+    
+    public loadTodosAll() {
+        const self = this;
+
+        async function *query() {
+            let token = null;
+        
+            while (true) {
+                const { nextPageToken, todos } = await self.client.fetchNextPage(undefined, token, 100) as any;
+
+                for (const todo of todos) {
+                    yield todo;
+                }
+            
+                if (nextPageToken) {
+                    token = nextPageToken;
+                } else {
+                    return;
+                }
+            }
+        }
+
+        return collectionQuery({
+            storeKey: TodoStoreKey,
+            query,
+            ids: new Set(),
+            events: [TODO_SOFT_DELETED_EVENT, TODO_SOFT_UNDELETED_EVENT],
+            data: this.data,
+            dataCtor: (model) => new SoftDeletableModelBox(new TodoModel(model)),
+            modelIdGetter: (model) => model.id!
+        })
+    }
+
+    public loadTodosByIds(ids: Set<string>): IAsyncIteratorBox<ISoftDeletableModelBox<TodoModel>> {
+        const self = this;
+
+        async function *query() {
+            let token = null;
+        
+            while (true) {
+                const { nextPageToken, todos } = await self.client.fetchNextPage(ids, token, 100) as any;
+
+                for (const todo of todos) {
+                    yield todo;
+                }
+            
+                if (nextPageToken) {
+                    token = nextPageToken;
+                } else {
+                    return;
+                }
+            }
+        }
+
+        return collectionQuery({
+            storeKey: TodoStoreKey,
+            query,
+            ids,
+            events: [],
+            data: this.data,
+            dataCtor: (model) => new SoftDeletableModelBox(new TodoModel(model)),
+            modelIdGetter: (model) => model.id!,
+        })
+    }
+
+    public async createTodo(view: ViewModelDeep<TodoModel>): Promise<ISoftDeletableModelBox<TodoModel>> {
+        const self = this;
+
+        async function query() {
+            return await self.client.addTodo(view);
+        }
+
+        const event: TodoCreatedEvent = {
+            type: TODO_CREATED_EVENT,
+            payload: { todo: view }
+        }
+
+        const mutation = (queryResult: TodoModel) => {
+            return createItem({
+                queryResult,
+                data: this.data,
+                dataCtor: (model) => new SoftDeletableModelBox(new TodoModel(model)),
+                modelIdGetter: (model) => model.id!,
+            })
+        }
+
+        return await mutator({
+            query,
+            event,
+            mutation,
+        })
+    }
+
+    public async softDeleteTodo(id: string): Promise<ISoftDeletableModelBox<TodoModel>> {
+        const self = this;
+
+        async function query() {
+            return await self.client.softDeleteTodo(id);
+        }
+
+        const event: TodoSoftDeletedEvent = {
+            type: TODO_SOFT_DELETED_EVENT,
+            payload: { todoId: id }
+        }
+
+        const mutation = (queryResult: TodoModel) => {
+            return softDeleteItem({
+                id,
+                queryResult,
+                data: this.data,
+            })
+        }
+
+        return await mutator({
+            query,
+            event,
+            mutation,
+        })
+    }
+
+    public undeleteTodo(id: string): Promise<ISoftDeletableModelBox<TodoModel>> {
+        const self = this;
+
+        async function query() {
+            return await self.client.undeleteTodo(id);
+        }
+
+        const event: TodoSoftUndeletedEvent = {
+            type: TODO_SOFT_UNDELETED_EVENT,
+            payload: { todoId: id }
+        }
+
+        const mutation = (queryResult: TodoModel) => {
+            return undeleteItem({
+                id,
+                queryResult,
+                data: this.data,
+                dataCtor: (model) => new SoftDeletableModelBox(new TodoModel(model)),
+            })
+        }
+
+        return mutator({
+            query,
+            event,
+            mutation,
+        })
+    }
+
+    public updateTodo(view: ViewModelDeep<TodoModel>): Promise<ISoftDeletableModelBox<TodoModel>> {
+        const self = this;
+
+        async function query() {
+            return await self.client.updateTodo(view);
+        }
+
+        const event: TodoUpdatedEvent = {
+            type: TODO_UPDATED_EVENT,
+            payload: { todo: view }
+        }
+
+        const mutation = (queryResult: TodoModel) => {
+            return updateItem({
+                queryResult,
+                data: this.data,
+                modelIdGetter: (model) => model.id!
+            })
+        }
+
+        return mutator({
+            query,
+            event,
+            mutation,
+        })
     }
 
     public toObject() {
         return {}
-    }
-
-    private getter = (id: string) => {
-        return this.data.get(id)?.deref();
-    }
-
-    private setter = (id: string, value: SoftDeletableModelBox<TodoModel>) => {
-        return this.data.set(id, new WeakRef(value));
-    }
-
-    private creator = (value: TodoModel) => {
-        return new SoftDeletableModelBox(value)
-    }
-
-    private idGetter = (model: TodoModel) => {
-        return model.id!
     }
 }

@@ -1,6 +1,5 @@
-import EventEmitter = require("events");
 import { singleton } from "tsyringe";
-export const StoresEventEmitterKey = Symbol("StoresEventEmitter");
+import { EventEmitter } from "../EventEmitter";
 
 @singleton()
-export default class StoresEventEmitter extends EventEmitter {}
+export class StoresEventEmitter extends EventEmitter {}

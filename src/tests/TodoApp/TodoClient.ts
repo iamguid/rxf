@@ -1,5 +1,5 @@
 import defineSingletone from "../../core/di/defineSingletone";
-import { TodoModel } from "./TodoModel";
+import { ITodoModel, TodoModel } from "./TodoModel";
 
 export const TodoClientKey = Symbol("TodoClient");
 
@@ -31,7 +31,7 @@ export class TodoClient {
         });
     }
 
-    public async fetchNextPage(ids?: Set<string>, pageToken?: string, pageSize = 10): Promise<{ nextPageToken: string, todos: TodoModel[] }> {
+    public async fetchNextPage(ids?: Set<string>, pageToken?: string, pageSize = 2): Promise<{ nextPageToken?: string, todos: TodoModel[] }> {
         const offset = pageToken ? Number.parseInt(pageToken, 10) : 0;
         const array = Array.from(this.todos.values())
             .filter(todo => ids ? ids.has(todo.id!) : true)
@@ -39,8 +39,12 @@ export class TodoClient {
 
         const resultArray = array.slice(offset, offset + pageSize);
 
+        let nextPageToken = offset + pageSize < array.length 
+            ? `${(pageToken ? Number.parseInt(pageToken, 10) : 0) + pageSize}`
+            : undefined;
+
         const result = {
-            nextPageToken: `${(pageToken ? Number.parseInt(pageToken, 10) : 0) + pageSize}`,
+            nextPageToken,
             todos: resultArray
         }
 
@@ -51,10 +55,11 @@ export class TodoClient {
         });
     }
 
-    public async addTodo(todo: TodoModel): Promise<TodoModel> {
+    public async addTodo(todo: ITodoModel): Promise<TodoModel> {
         const id = (this.lastId++).toString();
-        const newTodo: TodoModel = Object.assign({}, todo, { id })
-        this.todos.set(id, new TodoModel(newTodo))
+        const newTodo: TodoModel = new TodoModel(todo);
+        newTodo.id = id;
+        this.todos.set(id, newTodo);
 
         return new Promise((resolve, reject) => {
             setTimeout(() => {
@@ -98,9 +103,8 @@ export class TodoClient {
     }
 
     public async updateTodo(todo: TodoModel): Promise<TodoModel> {
-        const existsTodo = this.todos.get(todo.id!)!;
-        Object.assign(existsTodo, todo);
-        const copy = new TodoModel(existsTodo.toObject());
+        const copy = new TodoModel(todo);
+        this.todos.set(todo.id!, copy)!
 
         return new Promise((resolve, reject) => {
             setTimeout(() => {

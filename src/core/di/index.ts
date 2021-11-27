@@ -1,5 +1,4 @@
-export { container } from "tsyringe"
-export { injectable } from "tsyringe";
+export { container, injectable } from "tsyringe"
 export * from "./inject";
 export * from "./defineDataStore";
 export * from "./defineStateStore";
