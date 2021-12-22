@@ -14,7 +14,6 @@ const finalizationRegistry = new FinalizationRegistry((props: { events: symbol[]
 });
 
 export function collectionQuery<TModel extends IModel, TModelBox extends IModelBox<TModel>>(props: {
-    storeKey: symbol;
     ids: Set<string>;
     query: () => AsyncIterableIterator<TModel>;
     data: Map<string, WeakRef<TModelBox>>;

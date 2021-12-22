@@ -48,7 +48,6 @@ export class TodoDataStore implements ISerializable {
         }
 
         return collectionQuery({
-            storeKey: TodoStoreKey,
             query,
             ids,
             events: [],
@@ -70,7 +69,6 @@ export class TodoDataStore implements ISerializable {
         }
 
         return collectionQuery({
-            storeKey: TodoStoreKey,
             ids: new Set(),
             query,
             events: [],
@@ -102,7 +100,6 @@ export class TodoDataStore implements ISerializable {
         }
 
         return collectionQuery({
-            storeKey: TodoStoreKey,
             query,
             ids: new Set(),
             events: [TODO_SOFT_DELETED_EVENT, TODO_SOFT_UNDELETED_EVENT],
@@ -134,7 +131,6 @@ export class TodoDataStore implements ISerializable {
         }
 
         return collectionQuery({
-            storeKey: TodoStoreKey,
             query,
             ids,
             events: [],
