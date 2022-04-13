@@ -1,12 +1,12 @@
-import { observable } from "mobx";
 import { IModel } from "../../IModel";
-import { BoxedModel, IDataStoreAccessor } from "../IDataStoreAccessor";
+import { IPublicModelBox } from "../../mobx/IModelBox";
+import { IDataStoreAccessor } from "../IDataStoreAccessor";
 
 export const updateModels = <TModel extends IModel>(
     models: TModel[], 
     accessor: IDataStoreAccessor<TModel>
-): BoxedModel<TModel>[] => {
-    const result: BoxedModel<TModel>[] = [];
+): IPublicModelBox<TModel>[] => {
+    const result: IPublicModelBox<TModel>[] = [];
 
     for (const model of models) {
         const id = accessor.getId(model);
@@ -15,7 +15,7 @@ export const updateModels = <TModel extends IModel>(
         if (existing) {
             existing.set(model);
         } else {
-            accessor.set(id, accessor.create(model));
+            accessor.set(id, accessor.wrap(model));
         }
 
         result.push(accessor.get(id)!);

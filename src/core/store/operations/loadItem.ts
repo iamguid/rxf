@@ -1,32 +1,31 @@
-import { observable } from "mobx";
-import { IObservableValue } from "mobx/dist/internal";
 import { IModel } from "../../IModel";
-import { BoxedModel, IDataStoreAccessor } from "../IDataStoreAccessor";
+import { IPublicModelBox } from "../../mobx/IModelBox";
+import { IDataStoreAccessor } from "../IDataStoreAccessor";
 
-export type FetchSingleRequest<TModel extends IModel> = (id: string) => Promise<TModel>;
+export type FetchRequest<TModel extends IModel> = (id: string) => Promise<TModel>;
 
-export async function loadItem<TModel extends IModel>(props: {
+export async function loadItem<TModel extends IModel, TReturn extends IPublicModelBox<TModel>>(props: {
     id: string,
     invalidate: boolean
     accessor: IDataStoreAccessor<TModel>,
-    fetcher: FetchSingleRequest<TModel>,
-}): Promise<BoxedModel<TModel>> {
+    request: FetchRequest<TModel>,
+}): Promise<TReturn> {
     const existing = props.accessor.get(props.id);
 
     if (props.invalidate) {
-        const fetched = await this.accessor.fetchSingleRequest(props.id);
+        const fetched = await props.request(props.id);
 
         if (existing) {
             existing.set(fetched)
         } else {
-            this.accessor.setter(props.id, observable.box(fetched))
+            props.accessor.set(props.id, props.accessor.wrap(fetched))
         }
     } else {
         if (!existing) {
             const fetched = await this.accessor.fetchSingleRequest(props.id);
-            this.accessor.setter(props.id, observable.box(fetched));
+            props.accessor.set(props.id, props.accessor.wrap(fetched));
         }
     }
 
-    return this.accessor.getter(props.id)!;
+    return props.accessor.get(props.id)! as any;
 }

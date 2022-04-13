@@ -12,16 +12,22 @@ export class TodoApp {
     }
 
     public async run() {
-        const newTodo = this.todoStore.buildNewTodo();
-        newTodo.caption = "Todo #1";
-        newTodo.description = "First todo";
+        const newTodo = this.todoStore.buildNewTodo({
+            caption: "Todo #1",
+            description: "First todo",
+            deleted: false,
+        });
+
+        autorun(() => {
+            console.log("newTodo isDeleted: ", newTodo.model.get().deleted);
+        })
 
         const createTodoResult = await this.todoStore.createTodo(newTodo);
 
         console.log("createTodoResult is equals to newTodo.model", createTodoResult === newTodo.model)
 
         autorun(() => {
-            console.log("isDeleted: ", createTodoResult.isDeleted);
+            console.log("createTodoResult isDeleted: ", createTodoResult.get().deleted);
         })
 
         await this.todoStore.softDeleteTodo(createTodoResult.get().id!);

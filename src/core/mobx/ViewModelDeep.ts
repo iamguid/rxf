@@ -1,21 +1,21 @@
 import { IObservableValue, makeAutoObservable } from "mobx";
 import diff from "../diff/diff";
 import { IModel } from "../IModel";
-import { BoxedModel } from "../store/IDataStoreAccessor";
+import { IPublicModelBox } from "./IModelBox";
 
 export type ViewModelDeep<TModel extends IModel> = TModel & IViewModelDeepClass<TModel>;
 
 export interface IViewModelDeepClass<TModel extends IModel> {
-    model: BoxedModel<TModel>;
+    model: IPublicModelBox<TModel>;
     reset(): void;
     isDirty: boolean;
 }
 
 export class ViewModelDeepClass<TModel extends IModel> implements IViewModelDeepClass<TModel> {
-    public readonly model: BoxedModel<TModel>;
+    public readonly model: IPublicModelBox<TModel>;
     private copyObj: IModel;
 
-    constructor(model: BoxedModel<TModel>) {
+    constructor(model: IPublicModelBox<TModel>) {
         this.model = model;
         const copyObj = this.model.get().clone().toObject();
         this.copyObj = makeAutoObservable(copyObj) as IModel;
@@ -33,7 +33,7 @@ export class ViewModelDeepClass<TModel extends IModel> implements IViewModelDeep
     }
 }
 
-export function createViewModelDeep<T extends IModel>(model: BoxedModel<T>): ViewModelDeep<T> {
+export function createViewModelDeep<T extends IModel>(model: IPublicModelBox<T>): ViewModelDeep<T> {
   const clazz = new ViewModelDeepClass(model) as any;
 
   return new Proxy(clazz, {

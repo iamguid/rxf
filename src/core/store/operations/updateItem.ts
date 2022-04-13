@@ -1,29 +1,29 @@
-import { IObservableValue, runInAction } from "mobx";
 import { ViewModelDeep } from "../../mobx/ViewModelDeep";
+import { IPublicModelBox } from "../../mobx/IModelBox";
 import { IModel } from "../../IModel";
-import { BoxedModel, IDataStoreAccessor } from "../IDataStoreAccessor";
+import { IDataStoreAccessor } from "../IDataStoreAccessor";
 
 export type UpdateSingleRequest<TModel extends IModel> = (model: TModel) => Promise<TModel>;
 
-export async function updateItem<TModel extends IModel>(props: {
+export async function updateItem<TModel extends IModel, TReturn extends IPublicModelBox<TModel>>(props: {
     view: ViewModelDeep<TModel>,
     accessor: IDataStoreAccessor<TModel>,
-    updater: UpdateSingleRequest<TModel>,
-}): Promise<BoxedModel<TModel>> {
-    const id = this.accessor.idGetter(props.view);
-    const existing = this.accessor.getter(id);
+    request: UpdateSingleRequest<TModel>,
+}): Promise<TReturn> {
+    const id = props.accessor.getId(props.view);
+    const existing = props.accessor.get(id);
 
     if (!existing) {
         throw new Error(`Record with id ${id} is not exist in the store`);
     }
 
     if (!props.view.isDirty) {
-        return existing;
+        return existing as any;
     }
 
-    const updated = await props.updater(props.view);
+    const updated = await props.request(props.view);
 
     existing.set(updated);
 
-    return existing;
+    return existing as any;
 }
